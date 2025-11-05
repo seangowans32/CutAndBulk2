@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import path from "path";
 import { fileURLToPath } from "url";
 import express from "express";
+import fs from "fs";
 import config from "./config/config.js";
 import app from "./server/express.js";
 import userRoutes from "./server/routes/user.routes.js";
@@ -64,10 +65,26 @@ if (config.env === 'production') {
   // Log the build path for debugging
   console.log('Serving static files from:', clientBuildPath);
   
+  // Check if the build directory exists
+  if (!fs.existsSync(clientBuildPath)) {
+    console.error('❌ ERROR: Client build directory not found at:', clientBuildPath);
+    console.error('Make sure the build command completed successfully.');
+  } else {
+    console.log('✅ Client build directory found');
+    // Check if index.html exists
+    const indexPath = path.join(clientBuildPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      console.log('✅ index.html found');
+    } else {
+      console.error('❌ index.html not found at:', indexPath);
+    }
+  }
+  
   // Serve static files from the client build directory
-  // This must come before the catch-all middleware
+  // Use fallthrough: true so we can catch missing files and serve index.html for SPA routes
   app.use(express.static(clientBuildPath, {
-    fallthrough: false // Don't continue if file not found - let it 404 naturally
+    fallthrough: true, // Continue to next middleware if file not found
+    index: false // Don't auto-serve index.html, we'll handle it manually
   }));
   
   // SPA fallback: serve index.html for all non-API routes that don't match static files
