@@ -3,7 +3,8 @@ import User from '../models/user.model.js';
 
 /**
  * Daily reset scheduler
- * Runs at midnight (00:00) every day to reset:
+ * Runs every hour to check and reset users at their local midnight (00:00)
+ * Resets:
  * - dailyCalories to 0
  * - favoriteFoods[].quantity to 0
  * 
@@ -12,51 +13,65 @@ import User from '../models/user.model.js';
  * - favoriteFoods items themselves (name, calories)
  */
 export const startDailyResetScheduler = () => {
-  // Schedule task to run at midnight every day (00:00:00)
-  cron.schedule('0 0 * * *', async () => {
+  // Schedule task to run every hour (at minute 0)
+  // This allows us to check each user's timezone and reset at their local midnight
+  cron.schedule('0 * * * *', async () => {
     try {
-      console.log('Starting daily reset at midnight...');
-      
-      // Reset dailyCalories for all users
-      const result = await User.updateMany(
-        {}, // Update all users
-        {
-          $set: {
-            dailyCalories: 0,
-            updated: new Date()
-          }
-        }
-      );
-      
-      // Reset favoriteFoods quantities for all users
+      const now = new Date();
       const users = await User.find({});
+      let usersReset = 0;
       let foodQuantityReset = 0;
       
       for (const user of users) {
-        let updated = false;
-        for (let i = 0; i < user.favoriteFoods.length; i++) {
-          if (user.favoriteFoods[i].quantity !== 0) {
-            user.favoriteFoods[i].quantity = 0;
-            updated = true;
+        // Get the current time in the user's timezone
+        const userTimezone = user.timezone || 'America/Toronto';
+        const formatter = new Intl.DateTimeFormat('en-US', {
+          timeZone: userTimezone,
+          hour: 'numeric',
+          minute: 'numeric',
+          hour12: false
+        });
+        
+        const userTimeString = formatter.format(now);
+        const [userHour, userMinute] = userTimeString.split(':').map(Number);
+        
+        // Check if it's midnight (00:00) in the user's timezone
+        if (userHour === 0 && userMinute === 0) {
+          // Reset dailyCalories
+          user.dailyCalories = 0;
+          
+          // Reset favoriteFoods quantities
+          let updated = false;
+          for (let i = 0; i < user.favoriteFoods.length; i++) {
+            if (user.favoriteFoods[i].quantity !== 0) {
+              user.favoriteFoods[i].quantity = 0;
+              updated = true;
+            }
           }
-        }
-        if (updated) {
+          
+          user.updated = new Date();
           await user.save();
-          foodQuantityReset++;
+          usersReset++;
+          
+          if (updated) {
+            foodQuantityReset++;
+          }
+          
+          console.log(`Reset daily data for user ${user.username} (timezone: ${userTimezone})`);
         }
       }
       
-      console.log(`Daily reset completed. Updated ${result.modifiedCount} users' dailyCalories.`);
-      console.log(`Reset favoriteFood quantities for ${foodQuantityReset} users.`);
-      console.log(`Reset dailyCalories to 0 and all favoriteFood quantities to 0.`);
+      if (usersReset > 0) {
+        console.log(`Daily reset completed. Reset ${usersReset} users' dailyCalories.`);
+        console.log(`Reset favoriteFood quantities for ${foodQuantityReset} users.`);
+      }
       
     } catch (error) {
       console.error('Error during daily reset:', error);
     }
   }, {
-    scheduled: true,
-    timezone: "America/Toronto" // Adjust to your timezone
+    scheduled: true
   });
   
-  console.log('Daily reset scheduler started. Will reset at midnight every day.');
+  console.log('Daily reset scheduler started. Will check and reset users at their local midnight every hour.');
 };

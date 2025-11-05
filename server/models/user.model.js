@@ -31,6 +31,9 @@ const userSchema = new mongoose.Schema({
   // Daily calorie tracking
   dailyCalories: { type: Number, default: 0 },
   
+  // User's timezone (IANA timezone identifier, e.g., "America/Toronto", "America/New_York")
+  timezone: { type: String, default: "America/Toronto" },
+  
   created: { type: Date, default: Date.now },
   updated: Date
 });
