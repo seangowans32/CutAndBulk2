@@ -21,10 +21,15 @@ mongoose.Promise = global.Promise;
 mongoose
   .connect(config.mongoUri)
   .then(() => console.log("Connected to the database!"))
-  .catch((err) => console.error("Database connection error:", err));
+  .catch((err) => {
+    console.error("Database connection error:", err);
+    console.error("Server will continue running, but API endpoints may not work.");
+    // Don't throw - allow server to continue running even if DB is unavailable
+  });
 
-mongoose.connection.on("error", () => {
-  throw new Error(`unable to connect to database: ${config.mongoUri}`);
+mongoose.connection.on("error", (err) => {
+  console.error("Database connection error event:", err);
+  // Don't throw - allow server to continue running
 });
 
 // Serve static files from the React app in production
@@ -35,8 +40,9 @@ if (config.env === 'production') {
   console.log('Serving static files from:', clientBuildPath);
   
   // Serve static files from the client build directory
+  // This must come before the catch-all middleware
   app.use(express.static(clientBuildPath, {
-    fallthrough: true // Continue to next middleware if file not found
+    fallthrough: false // Don't continue if file not found - let it 404 naturally
   }));
   
   // SPA fallback: serve index.html for all non-API routes that don't match static files
@@ -48,6 +54,11 @@ if (config.env === 'production') {
     }
     // Skip non-GET requests
     if (req.method !== 'GET') {
+      return next();
+    }
+    // Skip requests that look like static assets (have file extensions)
+    // This prevents serving index.html for missing static files
+    if (req.path.match(/\.[a-zA-Z0-9]+$/)) {
       return next();
     }
     // Serve index.html for all other GET requests (SPA routing)
