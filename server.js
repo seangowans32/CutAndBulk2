@@ -29,22 +29,36 @@ mongoose.connection.on("error", () => {
 
 // Serve static files from the React app in production
 if (config.env === 'production') {
-  const clientBuildPath = path.join(__dirname, '../client/dist');
-  app.use(express.static(clientBuildPath));
+  const clientBuildPath = path.join(__dirname, 'client/dist');
   
-  // SPA fallback: serve index.html for all non-API routes
+  // Log the build path for debugging
+  console.log('Serving static files from:', clientBuildPath);
+  
+  // Serve static files from the client build directory
+  app.use(express.static(clientBuildPath, {
+    fallthrough: true // Continue to next middleware if file not found
+  }));
+  
+  // SPA fallback: serve index.html for all non-API routes that don't match static files
   // Use app.use() with a middleware function to handle catch-all for Express 5
   app.use((req, res, next) => {
-    // Skip API routes and static file requests
+    // Skip API routes
     if (req.path.startsWith('/api')) {
       return next();
     }
-    // If it's a GET request and not already handled by static files, serve index.html
-    if (req.method === 'GET') {
-      res.sendFile(path.join(clientBuildPath, 'index.html'));
-    } else {
-      next();
+    // Skip non-GET requests
+    if (req.method !== 'GET') {
+      return next();
     }
+    // Serve index.html for all other GET requests (SPA routing)
+    const indexPath = path.join(clientBuildPath, 'index.html');
+    res.sendFile(indexPath, (err) => {
+      if (err) {
+        console.error('Error serving index.html:', err);
+        console.error('Attempted path:', indexPath);
+        res.status(500).send('Error loading application');
+      }
+    });
   });
 } else {
   // Development root route
