@@ -1,0 +1,10 @@
+{
+  "name": "mern_skeleton",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Blessing Ajiboye",
+  "license": "MIT",
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}

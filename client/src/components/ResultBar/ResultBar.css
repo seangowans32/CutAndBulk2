@@ -1,0 +1,70 @@
+.calorie-bar-container {
+  position: relative;
+  flex: 0 0 100%;
+  height: 30px;
+  border-radius: var(--border-radius-5);
+  background-color: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.calorie-bar {
+  position: absolute;
+  left: 0;
+  height: 100%;
+  background: var(--green);
+  border-radius: var(--border-radius-5);
+  transition: width 0.5s ease-in-out;
+}
+
+.results {
+  margin-bottom: 60px;
+}
+
+.calorie-display {
+  margin-top: 20px;
+}
+
+.calorie-bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background-color: var(--green);
+  transition: width 0.5s ease-in-out;
+}
+
+.maintain-line, .cut-line, .bulk-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+.maintain-line {
+  left: 50%;
+}
+
+.cut-line {
+  left: 25%;
+}
+
+.bulk-line {
+  left: 75%;
+}
+
+.calorie-labels {
+  display: flex;
+  justify-content: space-between;
+  flex: 0 0 100%;
+  margin: 0 0 10px;
+}
+
+.results-container {
+  margin-bottom: 60px;
+}
+
+.progress-title {
+  text-align: center;
+  margin: 0 0 40px 0;
+}

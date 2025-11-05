@@ -1,0 +1,316 @@
+/* Resets */
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed,
+figure, figcaption, footer, header, hgroup,
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+	border: 0;
+	font-size: 100%;
+	vertical-align: baseline;
+}
+
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure,
+footer, header, hgroup, menu, nav, section {
+	display: block;
+}
+
+table {
+	border-collapse: collapse;
+	border-spacing: 0;
+}
+
+body, html {
+	margin: 0;
+	padding: 0;
+	font-size: 10px;
+}
+
+b, strong {
+	font-weight: bold;
+}
+
+:root {
+  --main-font: 'Roboto', sans-serif;
+  --white: #FFFFFF;
+  --black: #000000;
+  --blue: #23a6d5;
+  --teal: #23d5ab;
+  --red: #e73c7e;
+  --orange: #ee7752;
+  --grey: #808080;
+  --yellow: rgb(212, 223, 56);
+  --green: #32cd32;
+  --border-radius-5: 5px;
+  --border-radius-20: 20px;
+}
+
+#root {
+  padding: 0;
+}
+
+body {
+	line-height: 1;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  font-family: var(--main-font);
+  color: var(--white);
+  background: linear-gradient(-45deg, var(--orange), var(--red), var(--blue), var(--teal));
+	background-size: 400% 400%;
+	animation: gradient 30s ease infinite;
+	height: 100vh;
+  font-weight: 300;
+}
+
+.gap-10 {
+  gap: 10px;
+}
+
+.gap-20 {
+  gap: 20px;
+}
+
+.gap-40 {
+  gap: 40px;
+}
+
+.container {
+  max-width: 90%;
+  width: 1100px;
+  margin: 0 auto;
+}
+
+.container.container-2 {
+  width: 650px;
+}
+
+.flex {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+.img-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.img-container img,
+.img-container video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+}
+
+@keyframes gradient {
+	0% {
+		background-position: 0% 50%;
+	}
+	50% {
+		background-position: 100% 50%;
+	}
+	100% {
+		background-position: 0% 50%;
+	}
+}
+
+.App-body {
+  background-color: rgba(0, 0, 0, 0.5);
+  padding: 120px 0 60px;
+  min-height: 100vh;
+}
+
+.user-title {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+ul {
+  padding: 0;
+  margin: 0;
+  list-style-type: none;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  letter-spacing: normal;
+  line-height: 1.2;
+  text-transform: uppercase;
+  font-weight: 300;
+}
+
+h3, h4, h5, h6 {
+  margin: 0 0 20px;
+}
+
+h1 {
+  font-size: 50px;
+  margin: 0;
+}
+
+h2 {
+  font-size: 30px;
+  margin: 0 0 40px;
+}
+
+h2 {
+  font-size: 25px;
+}
+
+h3 {
+  font-size: 20px;
+}
+
+h4 {
+  font-size: 18px;
+}
+
+p, li {
+  font-size: 16px;
+  line-height: 1.6;
+  letter-spacing: normal;
+}
+
+.text-small {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.info-box {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+a {
+	text-decoration: none;
+  transition: all ease-in-out .2s!important;
+  color: var(--white);
+}
+
+a:hover {
+  color: var(--blue);
+}
+
+.col {
+  flex: 1;
+}
+
+
+/* Form Styles */
+.login-form h2 {
+  margin: 0 0 20px;
+}
+
+.login-form .logout-content {
+  justify-content: center;
+  text-align: center;
+}
+
+.login-form p {
+  flex: 0 0 100%
+}
+
+.login-form form {
+  flex: 1;
+}
+
+.login-form .frontend-button {
+  flex: 1;
+  width:100%;
+}
+
+.form-container {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: var(--border-radius-20);
+  padding: 40px;
+}
+
+.registration-form, .login-form, .logout-form {
+  padding-top: 200px;
+}
+
+.form-container h2 {
+  text-align: center;
+}
+
+label {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+input, select {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 10px;
+  border: none;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--white);
+  border-radius: var(--border-radius-5);
+  font-size: 16px;
+  font-weight: 300;
+  transition: all 0.3s ease;
+  -moz-appearance: textfield;
+  font-family: var(--main-font);
+  flex: 1;
+}
+
+input::placeholder {
+  color: var(--white);
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input:focus,
+select:focus {
+  outline: none;
+  box-shadow: 0 0 0 1px var(--white);
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.calorie-calculator .frontend-button {
+  width: 100%;
+}
+
+
+/* Button */
+.frontend-button {
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 12px;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.frontend-button:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}

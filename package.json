@@ -1,0 +1,35 @@
+{
+  "name": "mern_skeleton",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "author": "Blessing Ajiboye",
+  "license": "MIT",
+  "devDependencies": {
+    "@babel/core": "^7.28.4",
+    "@babel/preset-env": "^7.28.3",
+    "babel-loader": "^10.0.0",
+    "nodemon": "^3.1.10"
+  },
+  "scripts": {
+    "install-client": "npm install --prefix client",
+    "build": "npm run build --prefix client",
+    "start": "node server.js",
+    "dev": "concurrently \"npm run dev --prefix client\" \"nodemon server.js\""
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "body-parser": "^2.2.0",
+    "compression": "^1.8.1",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "global": "^4.4.0",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "lodash": "^4.17.21",
+    "method-override": "^3.0.0",
+    "mongoose": "^8.18.2",
+    "node-cron": "^4.2.1"
+  }
+}
