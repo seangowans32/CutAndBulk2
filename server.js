@@ -18,18 +18,43 @@ app.use("/api/auth", authRoutes);
 
 // Database connection
 mongoose.Promise = global.Promise;
+
+// Log connection attempt (but don't log the full URI with credentials in production)
+const mongoUriDisplay = config.mongoUri.includes('@') 
+  ? config.mongoUri.split('@')[1] 
+  : config.mongoUri;
+console.log("Attempting to connect to MongoDB at:", mongoUriDisplay);
+
 mongoose
-  .connect(config.mongoUri)
-  .then(() => console.log("Connected to the database!"))
+  .connect(config.mongoUri, {
+    serverSelectionTimeoutMS: 10000, // 10 seconds timeout
+    socketTimeoutMS: 45000,
+    connectTimeoutMS: 10000,
+    retryWrites: true,
+    w: 'majority'
+  })
+  .then(() => {
+    console.log("✅ Connected to the database successfully!");
+    console.log("Database name:", mongoose.connection.name);
+  })
   .catch((err) => {
-    console.error("Database connection error:", err);
+    console.error("❌ Database connection error:", err.message);
+    console.error("MongoDB URI being used:", mongoUriDisplay);
+    if (!config.mongoUri || config.mongoUri.includes('localhost')) {
+      console.error("⚠️  WARNING: MONGODB_URI environment variable is not set!");
+      console.error("Please set MONGODB_URI in your Render environment variables.");
+    }
     console.error("Server will continue running, but API endpoints may not work.");
     // Don't throw - allow server to continue running even if DB is unavailable
   });
 
 mongoose.connection.on("error", (err) => {
-  console.error("Database connection error event:", err);
+  console.error("Database connection error event:", err.message);
   // Don't throw - allow server to continue running
+});
+
+mongoose.connection.on("disconnected", () => {
+  console.warn("⚠️  MongoDB disconnected. Attempting to reconnect...");
 });
 
 // Serve static files from the React app in production
