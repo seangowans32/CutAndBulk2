@@ -52,8 +52,19 @@ export const register = async (req, res) => {
 // LOGIN existing user
 export const login = async (req, res) => {
   try {
+    // Validate required fields
+    if (!req.body.email || !req.body.password) {
+      return res.status(400).json({ error: "Email and password are required" });
+    }
+    
     const user = await User.findOne({ email: req.body.email });
-    if (!user || !user.comparePassword(req.body.password)) {
+    if (!user) {
+      return res.status(401).json({ error: "Invalid email or password" });
+    }
+    
+    // Compare password (synchronous method)
+    const isPasswordValid = user.comparePassword(req.body.password);
+    if (!isPasswordValid) {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
@@ -81,7 +92,8 @@ export const login = async (req, res) => {
       } 
     });
   } catch (err) {
-    res.status(400).json({ error: "Could not sign in" });
+    console.error("Login error:", err);
+    res.status(400).json({ error: err.message || "Could not sign in" });
   }
 };
 
