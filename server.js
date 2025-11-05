@@ -33,12 +33,18 @@ if (config.env === 'production') {
   app.use(express.static(clientBuildPath));
   
   // SPA fallback: serve index.html for all non-API routes
-  app.get('/*', (req, res) => {
-    // Don't serve index.html for API routes
+  // Use app.use() with a middleware function to handle catch-all for Express 5
+  app.use((req, res, next) => {
+    // Skip API routes and static file requests
     if (req.path.startsWith('/api')) {
-      return res.status(404).json({ error: 'API endpoint not found' });
+      return next();
     }
-    res.sendFile(path.join(clientBuildPath, 'index.html'));
+    // If it's a GET request and not already handled by static files, serve index.html
+    if (req.method === 'GET') {
+      res.sendFile(path.join(clientBuildPath, 'index.html'));
+    } else {
+      next();
+    }
   });
 } else {
   // Development root route
