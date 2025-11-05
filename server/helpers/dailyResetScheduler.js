@@ -10,12 +10,14 @@ import User from '../models/user.model.js';
  * Does NOT reset:
  * - bodyData (calorie calculator values)
  * - favoriteFoods items themselves (name, calories)
+ * 
+ * NOTE: Currently set to run every 5 minutes for testing purposes
  */
 export const startDailyResetScheduler = () => {
-  // Schedule task to run at midnight every day (00:00:00)
-  cron.schedule('0 0 * * *', async () => {
+  // Schedule task to run every 5 minutes for testing (change to '0 0 * * *' for daily at midnight)
+  cron.schedule('*/5 * * * *', async () => {
     try {
-      console.log('Starting daily reset at midnight...');
+      console.log('Starting daily reset (testing: every 5 minutes)...');
       
       // Reset dailyCalories for all users
       const result = await User.updateMany(
@@ -58,5 +60,5 @@ export const startDailyResetScheduler = () => {
     timezone: "America/Toronto" // Adjust to your timezone
   });
   
-  console.log('Daily reset scheduler started. Will reset at midnight every day.');
+  console.log('Daily reset scheduler started. Will reset every 5 minutes (testing mode).');
 };
