@@ -9,90 +9,6 @@ function FoodIntake({ onCaloriesUpdate }) {
     const [dailyCalories, setDailyCalories] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [dataLoaded, setDataLoaded] = useState(false);
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-    // Check if user is logged in
-    const checkAuthStatus = () => {
-        const savedUser = localStorage.getItem('user');
-        return !!savedUser;
-    };
-
-    // Load favorites from localStorage (for unauthenticated users)
-    const loadLocalFavorites = () => {
-        try {
-            const localFavorites = localStorage.getItem('localFavoriteFoods');
-            const localCalories = localStorage.getItem('localDailyCalories');
-            
-            if (localFavorites) {
-                const parsed = JSON.parse(localFavorites);
-                setFavorites(parsed);
-            }
-            
-            if (localCalories) {
-                const parsed = parseInt(localCalories) || 0;
-                setDailyCalories(parsed);
-                onCaloriesUpdate(parsed);
-            }
-        } catch (error) {
-            console.error('Error loading local favorites:', error);
-        }
-    };
-
-    // Save favorites to localStorage (for unauthenticated users)
-    const saveLocalFavorites = (favoritesToSave, caloriesToSave) => {
-        try {
-            localStorage.setItem('localFavoriteFoods', JSON.stringify(favoritesToSave));
-            localStorage.setItem('localDailyCalories', caloriesToSave.toString());
-        } catch (error) {
-            console.error('Error saving local favorites:', error);
-        }
-    };
-
-    // Sync local favorites to database when user logs in
-    const syncLocalFavoritesToDatabase = async () => {
-        try {
-            const localFavorites = localStorage.getItem('localFavoriteFoods');
-            if (!localFavorites) return;
-
-            const parsed = JSON.parse(localFavorites);
-            
-            // Add each favorite food to the database
-            for (const fav of parsed) {
-                try {
-                    await UserAPI.addFavoriteFood({
-                        name: fav.name,
-                        calories: fav.calories
-                    });
-                    
-                    // Update quantity if it's greater than 0
-                    if (fav.quantity > 0) {
-                        await UserAPI.updateFavoriteFoodQuantity({
-                            name: fav.name,
-                            quantity: fav.quantity
-                        });
-                    }
-                } catch (error) {
-                    // Food might already exist, that's okay
-                    console.log(`Food ${fav.name} might already exist or error occurred:`, error.message);
-                }
-            }
-
-            // Sync daily calories
-            const localCalories = localStorage.getItem('localDailyCalories');
-            if (localCalories) {
-                const calories = parseInt(localCalories) || 0;
-                if (calories > 0) {
-                    await UserAPI.updateDailyCalories(calories);
-                }
-            }
-
-            // Clear local storage after successful sync
-            localStorage.removeItem('localFavoriteFoods');
-            localStorage.removeItem('localDailyCalories');
-        } catch (error) {
-            console.error('Error syncing local favorites:', error);
-        }
-    };
 
     // Load saved favorites and daily calories on mount
     useEffect(() => {
@@ -100,12 +16,7 @@ function FoodIntake({ onCaloriesUpdate }) {
 
         const loadSavedData = async () => {
             const savedUser = localStorage.getItem('user');
-            const loggedIn = !!savedUser;
-            setIsLoggedIn(loggedIn);
-
-            if (!loggedIn) {
-                // Load from localStorage for unauthenticated users
-                loadLocalFavorites();
+            if (!savedUser) {
                 setIsLoading(false);
                 setDataLoaded(true);
                 return;
@@ -130,9 +41,6 @@ function FoodIntake({ onCaloriesUpdate }) {
                         setDailyCalories(response.user.dailyCalories);
                         onCaloriesUpdate(response.user.dailyCalories);
                     }
-
-                    // Sync any local favorites that might exist
-                    await syncLocalFavoritesToDatabase();
                 }
             } catch (error) {
                 // Handle error silently
@@ -147,49 +55,6 @@ function FoodIntake({ onCaloriesUpdate }) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Listen for auth changes (login/logout)
-    useEffect(() => {
-        const handleAuthChange = async () => {
-            const loggedIn = checkAuthStatus();
-            setIsLoggedIn(loggedIn);
-
-            if (loggedIn) {
-                // User just logged in, reload data from server
-                try {
-                    const response = await AuthAPI.getUser();
-                    if (response.user) {
-                        if (response.user.favoriteFoods && response.user.favoriteFoods.length > 0) {
-                            const loadedFavorites = response.user.favoriteFoods.map((fav, index) => ({
-                                id: index,
-                                name: fav.name,
-                                calories: fav.calories,
-                                quantity: fav.quantity || 0
-                            }));
-                            setFavorites(loadedFavorites);
-                        }
-
-                        if (response.user.dailyCalories !== undefined) {
-                            setDailyCalories(response.user.dailyCalories);
-                            onCaloriesUpdate(response.user.dailyCalories);
-                        }
-
-                        // Sync local favorites to database
-                        await syncLocalFavoritesToDatabase();
-                    }
-                } catch (error) {
-                    console.error('Error loading user data after login:', error);
-                }
-            } else {
-                // User logged out, load from localStorage
-                loadLocalFavorites();
-            }
-        };
-
-        window.addEventListener('authChange', handleAuthChange);
-        return () => window.removeEventListener('authChange', handleAuthChange);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
     const addFood = async (e) => {
         e.preventDefault();
 
@@ -201,107 +66,89 @@ function FoodIntake({ onCaloriesUpdate }) {
             return;
         }
 
-        const newFood = {
-            id: favorites.length, // Use length as ID
-            name: food.trim(),
-            calories: parseInt(calories),
-            quantity: 0
-        };
+        try {
+            // Save to backend
+            const response = await UserAPI.addFavoriteFood({
+                name: food.trim(),
+                calories: parseInt(calories)
+            });
 
-        // Add to local state immediately
-        const updatedFavorites = [...favorites, newFood];
-        setFavorites(updatedFavorites);
-        setFood('');
-        setCalories('');
+            // Add to local state with quantity 0
+            const newFood = {
+                id: favorites.length, // Use length as ID
+                name: food.trim(),
+                calories: parseInt(calories),
+                quantity: 0
+            };
 
-        // Save to backend if logged in, otherwise save to localStorage
-        if (isLoggedIn) {
-            try {
-                await UserAPI.addFavoriteFood({
-                    name: newFood.name,
-                    calories: newFood.calories
-                });
-            } catch (error) {
-                alert(error.message || 'Failed to add food. Please try again.');
-                // Remove from local state if backend save failed
-                setFavorites(favorites);
-            }
-        } else {
-            // Save to localStorage for unauthenticated users
-            saveLocalFavorites(updatedFavorites, dailyCalories);
+            // Note: quantity is saved as 0 when adding, backend will store it
+
+            setFavorites([...favorites, newFood]);
+            setFood('');
+            setCalories('');
+        } catch (error) {
+            alert(error.message || 'Failed to add food. Please try again.');
         }
     };
 
     const addCalories = async (foodItem) => {
-        const newQuantity = foodItem.quantity + 1;
-        const newDailyCalories = dailyCalories + foodItem.calories;
-
         const updatedFavorites = favorites.map(fav => {
             if (fav.id === foodItem.id) {
+                const newQuantity = fav.quantity + 1;
+                const newDailyCalories = dailyCalories + fav.calories;
+
+                setDailyCalories(newDailyCalories);
+                onCaloriesUpdate(newDailyCalories);
+
+                // Save daily calories to backend
+                UserAPI.updateDailyCalories(newDailyCalories).catch(err => {
+                    console.error('Failed to update daily calories:', err);
+                });
+
+                // Save quantity to backend
+                UserAPI.updateFavoriteFoodQuantity({
+                    name: fav.name,
+                    quantity: newQuantity
+                }).catch(err => {
+                    console.error('Failed to update food quantity:', err);
+                });
+
                 return { ...fav, quantity: newQuantity };
             }
             return fav;
         });
 
-        setDailyCalories(newDailyCalories);
-        onCaloriesUpdate(newDailyCalories);
         setFavorites(updatedFavorites);
-
-        // Save to backend if logged in, otherwise save to localStorage
-        if (isLoggedIn) {
-            // Save daily calories to backend
-            UserAPI.updateDailyCalories(newDailyCalories).catch(err => {
-                console.error('Failed to update daily calories:', err);
-            });
-
-            // Save quantity to backend
-            UserAPI.updateFavoriteFoodQuantity({
-                name: foodItem.name,
-                quantity: newQuantity
-            }).catch(err => {
-                console.error('Failed to update food quantity:', err);
-            });
-        } else {
-            // Save to localStorage for unauthenticated users
-            saveLocalFavorites(updatedFavorites, newDailyCalories);
-        }
     };
 
     const subtractCalories = async (foodItem) => {
-        if (foodItem.quantity <= 0) return;
-
-        const newQuantity = foodItem.quantity - 1;
-        const newDailyCalories = Math.max(0, dailyCalories - foodItem.calories);
-
         const updatedFavorites = favorites.map(fav => {
-            if (fav.id === foodItem.id) {
+            if (fav.id === foodItem.id && fav.quantity > 0) {
+                const newQuantity = fav.quantity - 1;
+                const newDailyCalories = Math.max(0, dailyCalories - fav.calories);
+
+                setDailyCalories(newDailyCalories);
+                onCaloriesUpdate(newDailyCalories);
+
+                // Save daily calories to backend
+                UserAPI.updateDailyCalories(newDailyCalories).catch(err => {
+                    console.error('Failed to update daily calories:', err);
+                });
+
+                // Save quantity to backend
+                UserAPI.updateFavoriteFoodQuantity({
+                    name: fav.name,
+                    quantity: newQuantity
+                }).catch(err => {
+                    console.error('Failed to update food quantity:', err);
+                });
+
                 return { ...fav, quantity: newQuantity };
             }
             return fav;
         });
 
-        setDailyCalories(newDailyCalories);
-        onCaloriesUpdate(newDailyCalories);
         setFavorites(updatedFavorites);
-
-        // Save to backend if logged in, otherwise save to localStorage
-        if (isLoggedIn) {
-            // Save daily calories to backend
-            UserAPI.updateDailyCalories(newDailyCalories).catch(err => {
-                console.error('Failed to update daily calories:', err);
-            });
-
-            // Save quantity to backend
-            UserAPI.updateFavoriteFoodQuantity({
-                name: foodItem.name,
-                quantity: newQuantity
-            }).catch(err => {
-                console.error('Failed to update food quantity:', err);
-            });
-        } else {
-            // Save to localStorage for unauthenticated users
-            saveLocalFavorites(updatedFavorites, newDailyCalories);
-        }
     };
 
     const removeFavorite = async (foodItem) => {
@@ -314,26 +161,17 @@ function FoodIntake({ onCaloriesUpdate }) {
             if (caloriesToSubtract > 0) {
                 setDailyCalories(newDailyCalories);
                 onCaloriesUpdate(newDailyCalories);
-            }
 
-            // Remove from backend if logged in, otherwise just remove from localStorage
-            if (isLoggedIn) {
                 // Save daily calories to backend
-                if (caloriesToSubtract > 0) {
-                    UserAPI.updateDailyCalories(newDailyCalories).catch(err => {
-                        console.error('Failed to update daily calories:', err);
-                    });
-                }
-
-                // Remove from backend
-                await UserAPI.removeFavoriteFood({
-                    name: foodItem.name
+                UserAPI.updateDailyCalories(newDailyCalories).catch(err => {
+                    console.error('Failed to update daily calories:', err);
                 });
-            } else {
-                // Save to localStorage for unauthenticated users
-                const updatedFavorites = favorites.filter(fav => fav.id !== foodItem.id);
-                saveLocalFavorites(updatedFavorites, newDailyCalories);
             }
+
+            // Remove from backend
+            await UserAPI.removeFavoriteFood({
+                name: foodItem.name
+            });
 
             // Remove from local state
             setFavorites(favorites.filter(fav => fav.id !== foodItem.id));
@@ -378,21 +216,6 @@ function FoodIntake({ onCaloriesUpdate }) {
             <div className='food-favorites'>
                 <h3>Favorite Foods</h3>
                 <p>Daily Calories: {dailyCalories} kcal</p>
-                
-                {!isLoggedIn && (
-                    <p style={{ 
-                        padding: '10px', 
-                        backgroundColor: '#fff3cd', 
-                        border: '1px solid #ffc107', 
-                        borderRadius: '4px',
-                        marginBottom: '10px',
-                        fontSize: '14px'
-                    }}>
-                        ⚠️ You're not logged in. Your favorite foods are saved locally. 
-                        <a href="/login" style={{ marginLeft: '5px', color: '#007bff' }}>Login</a> or 
-                        <a href="/register" style={{ marginLeft: '5px', color: '#007bff' }}>Register</a> to save them permanently.
-                    </p>
-                )}
 
                 {favorites.length === 0 ? (
                   <p>No favorite foods yet. Add some foods above!</p>
